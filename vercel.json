@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://lunch-delivery-api-7we5.onrender.com/:path*"
+    }
+  ]
+}

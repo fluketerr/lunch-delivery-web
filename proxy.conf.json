@@ -1,0 +1,10 @@
+{
+  "/api": {
+    "target": "https://lunch-delivery-api-7we5.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api": ""
+    }
+  }
+}

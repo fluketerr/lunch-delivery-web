@@ -1,0 +1,192 @@
+<div class="bg-white border border-[#E4E7EC] w-full h-full rounded-r-2xl flex p-4 overflow-hidden">
+    <div class="w-full h-full min-h-0 flex flex-col mt-4"><!-- border border-[#E4E7EC] -->
+        <div class="flex items-center justify-between mb-5">
+            <h1 class="text-[#0F172A] text-xl font-semibold">ออเด้อร์อาหาร</h1>
+            <button
+                type="button"
+                (click)="simulateOrders()"
+                [disabled]="simulating() || deletingOrderId() !== null || saving()"
+                class="rounded-md bg-[#38c28f] px-2 py-1 text-xs font-medium text-white hover:bg-[#45bd91] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                {{ simulating() ? 'กำลังสร้าง...' : 'Simulate order' }}
+            </button>
+        </div>
+        <div class="relative mb-5">
+            <svg class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F172A]/62"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke-width="2" />
+                <path stroke-width="2" stroke-linecap="round" d="m16 16 4 4" />
+            </svg>
+            <input #orderSearch type="search" placeholder="ค้นหาออเดอร์หรือลูกค้า"
+                aria-label="ค้นหาออเดอร์หรือลูกค้า"
+                [value]="searchQuery()"
+                (input)="searchQuery.set(orderSearch.value)"
+                class=" w-full font-normal text-sm bg-[#F8FAFC] pl-8 pr-2 py-1 border-2 rounded-md border-[#E4E7EC]" />
+        </div>
+
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-[#0F172A]/62 text-xs font-semibold">รายการออเด้อร์</h1>
+            <div class="flex gap-2">
+                <button type="button" (click)="toggleDeleteOrder()" [style.color]="toggleDelete ? '#5dc19c' : null"
+                    class="leading-none font-light text-[#7b8794] hover:text-[#4b8a73]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M21 5.97998C17.67 5.64998 14.32 5.47998 10.98 5.47998C9 5.47998 7.02 5.57998 5.04 5.77998L3 5.97998" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 4.97L8.72 3.66C8.88 2.71 9 2 10.69 2H13.31C15 2 15.13 2.75 15.28 3.67L15.5 4.97" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.85 9.14001L18.2 19.21C18.09 20.78 18 22 15.21 22H8.79002C6.00002 22 5.91002 20.78 5.80002 19.21L5.15002 9.14001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.33 16.5H13.66" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 12.5H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            
+                <button type="button" (click)="toggleAddOrder()"
+                    aria-label="เพิ่มออเดอร์" title="เพิ่มออเดอร์"
+                    [disabled]="simulating() || deletingOrderId() !== null || saving()"
+                    class="inline-flex items-center gap-1 leading-none font-light text-[#7b8794] hover:text-[#5dc19c] disabled:opacity-50">
+                    <span class="text-xs">เพิ่ม</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 12H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M12 16V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        @if (deleteError()) {
+            <p role="alert" class="mb-3 text-sm text-red-700">{{ deleteError() }}</p>
+        }
+        @if (deleteNotice()) {
+            <p role="status" class="mb-3 text-sm text-emerald-700">{{ deleteNotice() }}</p>
+        }
+        @if (createNotice()) {
+            <p role="status" class="mb-3 text-sm text-emerald-700">{{ createNotice() }}</p>
+        }
+
+        <div class="flex-1 min-h-0 overflow-y-auto space-y-3 pr-2">
+            @for (order of filteredOrders(); track order.order_id) {
+                <article class="flex items-start rounded-lg border border-[#E4E7EC] transition-colors hover:bg-[#F8FAFC]">
+                <button
+                    type="button"
+                    (click)="selectOrder(order)"
+                    class="block min-w-0 flex-1 cursor-pointer rounded-lg p-3 text-left focus-visible:outline-2 focus-visible:outline-[#3EB489]">
+                    <span class="block text-sm font-medium text-[#0F172A]">Order #{{ order.order_id }}</span>
+                    <span class="mt-1 block text-xs text-[#64748B]">
+                            ลูกค้า: {{ order.name }}
+                    </span>
+                    <!-- <div class="text-[#0F172A]/70 text-sm mt-1">
+                        จำนวน: {{ order.quantity }} กล่อง
+                    </div>
+                    <div class="text-[#0F172A]/70 text-sm mt-1">
+                        สถานะ: {{ order.status }}
+                    </div> -->
+                </button>
+                @if (toggleDelete) {
+                <button
+                    type="button"
+                    (click)="deleteOrder(order)"
+                    [disabled]="deletingOrderId() !== null || simulating() || saving()"
+                    [attr.aria-label]="'ลบออเดอร์ ' + order.order_id"
+                    class="mt-2 mr-2 shrink-0 cursor-pointer rounded-md px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-600 disabled:cursor-wait disabled:opacity-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 5.97998C17.67 5.64998 14.32 5.47998 10.98 5.47998C9 5.47998 7.02 5.57998 5.04 5.77998L3 5.97998" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 4.97L8.72 3.66C8.88 2.71 9 2 10.69 2H13.31C15 2 15.13 2.75 15.28 3.67L15.5 4.97" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.85 9.14001L18.2 19.21C18.09 20.78 18 22 15.21 22H8.79002C6.00002 22 5.91002 20.78 5.80002 19.21L5.15002 9.14001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.33 16.5H13.66" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 12.5H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    {{ deletingOrderId() === order.order_id ? 'กำลังลบ…' : '' }}
+                </button>
+            }
+                </article>
+            } @empty {
+            <div class="text-[#0F172A]/62 text-sm" role="status">
+                {{ searchQuery().trim() ? 'ไม่พบออเดอร์ที่ตรงกับคำค้นหา' : 'ไม่พบข้อมูลออเดอร์' }}
+            </div>
+            }
+        </div>
+        
+        @if (addOrder) {
+            <div class="fixed inset-0 z-1000 grid min-h-screen place-items-center overflow-y-auto bg-slate-950/45 p-4" (click)="toggleAddOrder()" (keydown.escape)="toggleAddOrder()">
+                <section role="dialog" aria-modal="true" aria-labelledby="add-order-title"
+                    class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl" (click)="$event.stopPropagation()">
+                    <header class="mb-5 flex items-start justify-between gap-4">
+                        <div>
+                            <h2 id="add-order-title" class="text-lg font-semibold text-[#0F172A]">เพิ่มออเดอร์</h2>
+                            <p class="mt-1 text-sm text-[#64748B]">ใส่ข้อมูลและกดบันทึก</p>
+                        </div>
+                        <button type="button" aria-label="ปิด" (click)="toggleAddOrder()" [disabled]="saving()"
+                            class="rounded-md p-1 text-xl leading-none text-slate-500 hover:bg-slate-100">&times;</button>
+                    </header>
+                    <form (ngSubmit)="saveOrder()" class="space-y-4">
+                        @if (customersLoading()) {
+                            <p role="status" class="text-sm text-slate-500">กำลังโหลดรายชื่อลูกค้า…</p>
+                        }
+                        @if (customersError()) {
+                            <div role="alert" class="text-sm text-red-700">
+                                <p>{{ customersError() }}</p>
+                                <button type="button" (click)="loadCustomers()" class="mt-1 underline">ลองอีกครั้ง</button>
+                            </div>
+                        } @else if (!customersLoading() && customers().length === 0) {
+                            <p role="status" class="text-sm text-slate-500">ยังไม่มีข้อมูลลูกค้า กรุณาเพิ่มลูกค้าก่อนสร้างออเดอร์</p>
+                        }
+                        <label class="block text-sm font-medium text-slate-700">ลูกค้า
+                            <select name="customer" [(ngModel)]="orderForm.customer_id" required autofocus
+                                [disabled]="customersLoading() || customers().length === 0 || saving()"
+                                class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100">
+                                <option value="" disabled>เลือกลูกค้า</option>
+                                @for (customer of customers(); track customer.customer_id) {
+                                    <option [value]="customer.customer_id">{{ customer.name }} · #{{ customer.customer_id }}</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="block text-sm font-medium text-slate-700">วันที่จัดส่ง
+                            <input name="deliveryDate" type="date" [(ngModel)]="orderForm.delivery_date" required [disabled]="saving()"
+                                class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+                        </label>
+                        <label class="block text-sm font-medium text-slate-700">จำนวน
+                            <select name="quantity" [(ngModel)]="orderForm.quantity" required [disabled]="saving()"
+                                class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100">
+                                <option [ngValue]="1">1</option>
+                                <option [ngValue]="2">2</option>
+                                <option [ngValue]="3">3</option>
+                            </select>
+                        </label>
+                        <p class="text-sm text-slate-500">ราคากล่องละ 65 บาท · รวม {{ orderForm.quantity * 65 }} บาท</p>
+                        @if (editError()) { <p role="alert" class="text-sm text-red-700">{{ editError() }}</p> }
+                        <footer class="flex justify-end gap-2 pt-2">
+                            <button type="button" (click)="toggleAddOrder()" [disabled]="saving()"
+                                class="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">ยกเลิก</button>
+                            <button type="submit" [disabled]="saving() || customersLoading() || customers().length === 0"
+                                class="cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60">{{
+                                saving() ? 'กำลังบันทึก…' : 'บันทึก' }}</button>
+                        </footer>
+                    </form>
+                </section>
+            </div>
+        }
+    </div>
+</div>
+
+
+<!-- <div class="flex-1 min-h-0">
+        <div class="w-full bg-white border border-[#E4E7EC] rounded-xl p-5 shadow-sm">
+
+            <div class="flex items-center gap-3 mb-4">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#FF7A1A]"></span>
+                <h3 class="font-bold text-gray-900 text-base">Order #1</h3>
+                <span class="text-gray-500 text-sm">ลูกค้า: llrumix (บ้านเลขที่ 1234)</span>
+            </div>
+
+            <div class="bg-[#ECFDF5] rounded-xl p-4 mb-4">
+                <p class="text-xs text-gray-500 mb-1">รายการอาหาร</p>
+                <div class="flex justify-between items-center text-sm text-gray-800">
+                    <span>มันฝรั่งอบกรอบ หน้าแซลมอนรมควัน และ คาเวียร์ x2</span>
+                    <span class="font-medium">2 กล่อง</span>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-sm px-1">
+                <div class="flex justify-between text-gray-600">
+                    <span>รวมทั้งหมด</span>
+                    <span class="font-medium text-gray-900">2 กล่อง</span>
+                </div>
+                <div class="flex justify-between text-gray-600">
+                    <span>กำไร / กล่อง</span>
+                    <span class="font-medium text-[#3EB489]">+50 ฿</span>
+                </div>
+            </div>
+
+        </div>
+    </div>-->

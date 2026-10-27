@@ -1,0 +1,28 @@
+<div class="z-10 w-full h-screen flex justify-center items-center p-5">
+  <div>
+    <div class="flex items-center text-xs text-gray-400 mb-5.5 gap-2 opacity-72">
+        <span class="w-1.5 h-1.5 bg-[#98FF98] rounded-full align-bottom"></span>
+        <span class="font-normal text-base text-[#0F172A]">ร้านxxxxx</span>
+    </div>
+    <div class="flex mb-5.5 opacity-72">
+        <span class="font-normal text-[#0F172A]">ระบบงานส่งอาหาร</span>
+    </div>
+    <div class="flex mb-7">
+        <span class="w-8.5 h-0.75 bg-[#98FF98] rounded-full align-bottom"></span>
+    </div>
+    <div class="flex mb-11 opacity-72 flex-col">
+        <span class="font-light text-[#0F172A] text-3xl">กรอกเลขใบงาน</span>
+        <span class="font-light leading-7 text-[#0F172A]">กรอกเลขใบงานเพื่อดำเนินการต่อ</span>
+    </div>
+    <div class="flex mb-12.5 flex-col gap-3.5">
+        <span class="font-light text-[#0F172A] text-sm">เลขใบงาน</span>
+        <input #workNumInput type="text" placeholder="กรอกเลขใบงาน" class="w-80 h-12 border-b border-[#D1D5DB]  text-sm text-[#0F172A] placeholder:text-[#9CA3AF] focus:outline-none focus:border-b-2 focus:border-[#98FF98] transition delay-75 duration-200 ease" />
+    </div>
+    <div class="mb-12.5">
+      <button class="w-80 h-12 bg-[#FF7A1A] text-[#0F172A] text-sm font-medium hover:bg-[#E06000] transition duration-200 ease" (click)="secretOwnerPage(workNumInput)">ยืนยัน</button>
+    </div>
+    <div class="flex mb-11 opacity-72 flex-col">
+        <span class="font-normal text-[#0F172A] text-sm"> ระบบจะตรวจสอบเลขใบงานและแสดงรายละเอียดที่เกี่ยวข้องให้ทันที</span>
+    </div>
+  </div>
+</div>

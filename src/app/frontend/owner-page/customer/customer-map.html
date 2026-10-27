@@ -1,0 +1,61 @@
+<section
+  class="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-[#E4E7EC] bg-white"
+  aria-labelledby="customer-map-title"
+>
+  <header
+    class="flex flex-wrap items-center justify-between gap-3 border-b border-[#E4E7EC] px-5 py-4"
+  >
+    <div>
+      <h2 id="customer-map-title" class="text-lg font-semibold text-[#0F172A]">ตำแหน่งลูกค้า</h2>
+      <p class="mt-1 text-sm text-[#64748B]" role="status" aria-live="polite">
+        {{ store.locatedCustomers().length }} หมุด จากลูกค้าทั้งหมด
+        {{ store.customers().length }} คน
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="showAll()"
+      [disabled]="!store.locatedCustomers().length"
+      class="cursor-pointer rounded-lg border border-[#D1D5DB] px-3 py-2 text-sm font-medium text-[#0F172A] hover:bg-[#ECFDF5] focus-visible:outline-2 focus-visible:outline-emerald-600 disabled:cursor-default disabled:opacity-50"
+    >
+      แสดงหมุดทั้งหมด
+    </button>
+  </header>
+  <div class="relative min-h-90 flex-1">
+    <div
+      #mapContainer
+      class="absolute inset-0 z-0"
+      role="region"
+      aria-label="แผนที่ตำแหน่งลูกค้าทั้งหมด"
+    ></div>
+    @if (store.loading()) {
+      <p
+        role="status"
+        class="pointer-events-none absolute top-4 left-14 z-10 rounded-lg bg-white/95 px-4 py-2 text-sm text-[#64748B] shadow-sm"
+      >
+        กำลังโหลดตำแหน่งลูกค้า…
+      </p>
+    } @else if (store.error()) {
+      <div
+        role="alert"
+        class="absolute top-4 right-4 left-14 z-10 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-orange-200 bg-white/95 px-4 py-3 text-sm text-orange-800 shadow-sm"
+      >
+        <span>{{ store.error() }}</span>
+        <button
+          type="button"
+          (click)="store.load()"
+          class="cursor-pointer font-medium underline underline-offset-4"
+        >
+          ลองอีกครั้ง
+        </button>
+      </div>
+    } @else if (!store.locatedCustomers().length) {
+      <p
+        role="status"
+        class="pointer-events-none absolute top-4 left-14 z-10 rounded-lg bg-white/95 px-4 py-2 text-sm text-[#64748B] shadow-sm"
+      >
+        ยังไม่มีพิกัดลูกค้าสำหรับแสดงบนแผนที่
+      </p>
+    }
+  </div>
+</section>

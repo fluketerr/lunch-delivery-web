@@ -1,0 +1,89 @@
+<section class="flex h-full w-full flex-col rounded-r-2xl border border-[#E4E7EC] bg-white p-4">
+  <h1 class="mb-4 text-xl font-semibold text-slate-900">ใบงานที่ยืนยันแล้ว</h1>
+  <label class="mb-3 text-sm text-slate-600"
+    >วันที่จัดส่ง
+    <input
+      #dateInput
+      type="date"
+      [value]="date"
+      (change)="reload(dateInput.value)"
+      class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+    />
+  </label>
+  <div class="mb-4 flex items-center justify-between text-sm">
+    <span>{{ service.savedJobs().length }} ใบงาน</span>
+    <button
+      type="button"
+      (click)="reload()"
+      [disabled]="service.loadingSaved()"
+      class="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50"
+    >
+      โหลดใหม่
+    </button>
+  </div>
+  @if (service.loadingSaved()) {
+    <p role="status" class="mb-3 text-sm text-slate-500">กำลังโหลดใบงาน...</p>
+  }
+  @if (service.planMessage(); as message) {
+    <p role="alert" class="mb-3 rounded-lg bg-orange-50 p-3 text-sm text-orange-700">
+      {{ message }}
+    </p>
+  }
+  <div class="min-h-0 flex-1 space-y-3 overflow-y-auto">
+    @for (job of service.savedJobs(); track job.job_id; let index = $index) {
+      <article
+        class="rounded-xl border border-slate-200 bg-white"
+        [class.border-emerald-500]="service.selectedJobIndex() === index"
+      >
+        <button
+          type="button"
+          (click)="select(index)"
+          [attr.aria-pressed]="service.selectedJobIndex() === index"
+          class="w-full p-3 text-left"
+        >
+          <div class="flex flex-wrap justify-between gap-2">
+            <h2 class="font-semibold">ใบงาน {{ job.job_code }}</h2>
+            <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">{{
+              status(job)
+            }}</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">
+            {{ job.stops.length }} จุด · {{ job.totals?.total_boxes ?? job.total_boxes }} กล่อง ·
+            {{ job.totals?.total_distance_km ?? job.total_distance_km }} กม.
+          </p>
+          <ol class="mt-3 space-y-2 text-sm">
+            @for (stop of job.stops; track stop.stop_id) {
+              <li>
+                {{ stop.stop_sequence }}. {{ stop.order?.name ?? stop.name }}
+                <p class="text-xs text-slate-500">{{ stop.order?.address ?? stop.address }}</p>
+                <p class="text-xs text-emerald-700">
+                  {{ stop.order?.quantity ?? stop.quantity }} กล่อง ·
+                  {{ stop.delivered_at ? 'ส่งแล้ว' : 'รอส่ง' }}
+                </p>
+              </li>
+            }
+          </ol>
+        </button>
+        <div class="border-t border-slate-100 p-3 text-xs text-slate-600">
+          <p>
+            ค่าส่ง {{ job.totals?.delivery_cost ?? job.delivery_cost }} บาท · กำไร
+            {{ job.totals?.profit ?? job.profit ?? '-' }} บาท
+          </p>
+          <a
+            [routerLink]="['/rider', job.job_code]"
+            target="_blank"
+            rel="noopener"
+            class="mt-2 inline-block text-emerald-700 underline"
+            >เปิดหน้าไรเดอร์</a
+          >
+        </div>
+      </article>
+    } @empty {
+      @if (!service.loadingSaved() && !service.planMessage()) {
+        <p class="rounded-xl border border-dashed p-5 text-center text-sm text-slate-500">
+          ไม่มีใบงานที่ยืนยันแล้วในวันที่เลือก
+        </p>
+      }
+    }
+  </div>
+</section>

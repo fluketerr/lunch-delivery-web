@@ -1,0 +1,35 @@
+:host { display: block; background: #f3f4f6; min-height: 100vh; color: #1f2937; }
+main { max-width: 1200px; margin: auto; padding: 20px; }
+h1 { font-size: 1.6rem; font-weight: 700; }
+h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 12px; }
+h3 { font-weight: 600; margin-bottom: 8px; }
+section { background: white; padding: 18px; margin: 16px 0; border: 1px solid #d1d5db; border-radius: 6px; }
+p { margin: 8px 0; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+label { display: flex; flex-direction: column; gap: 5px; font-size: .9rem; }
+input:not([type=checkbox]), select { width: 100%; border: 1px solid #9ca3af; border-radius: 4px; padding: 7px; background: white; color: #111827; }
+input[type=checkbox] { width: 17px; height: 17px; }
+.check { flex-direction: row; align-items: center; margin-top: 14px; }
+.row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin: 12px 0; }
+.grow { flex: 1; min-width: 220px; }
+button { padding: 7px 12px; border: 1px solid #9ca3af; border-radius: 4px; cursor: pointer; background: #f9fafb; }
+button:hover { background: #e5e7eb; }
+button:disabled { opacity: .5; cursor: default; }
+.primary, button.chosen { background: #1d4ed8; color: white; border-color: #1d4ed8; }
+.primary:hover { background: #1e40af; }
+.hint { font-size: .85rem; color: #4b5563; }
+.error { color: #b91c1c; white-space: pre-wrap; overflow-wrap: anywhere; }
+.success { color: #047857; overflow-wrap: anywhere; }
+.scroll { overflow: auto; max-height: 420px; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { padding: 9px; border-bottom: 1px solid #e5e7eb; text-align: left; white-space: nowrap; }
+th { background: #f9fafb; position: sticky; top: 0; }
+.map { height: 420px; width: 100%; z-index: 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+article { border: 1px solid #d1d5db; border-left: 5px solid; padding: 14px; border-radius: 4px; }
+ol { list-style: decimal; padding-left: 24px; }
+li { margin: 10px 0; }
+a { color: #1d4ed8; text-decoration: underline; }
+.rider-stops li { border-bottom: 1px solid #e5e7eb; padding: 12px 0; }
+@media (max-width: 600px) { main { padding: 10px; } section { padding: 12px; } .map { height: 300px; } }

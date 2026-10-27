@@ -1,0 +1,363 @@
+<div class="flex h-full w-full rounded-r-2xl border border-[#E4E7EC] bg-white p-4">
+  <div class="mt-4 flex min-h-0 w-full flex-col">
+    <h1 class="mb-5 text-xl font-semibold text-[#0F172A]">เส้นทางการจัดส่ง</h1>
+    <div class="relative mb-5">
+      <svg
+        class="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0F172A]/62"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="7" stroke-width="2" />
+        <path stroke-width="2" stroke-linecap="round" d="m16 16 4 4" />
+      </svg>
+      <input
+        type="search"
+        placeholder="งานหรือค้นหาไรเดอร์"
+        aria-label="ค้นหาไรเดอร์"
+        class="w-full rounded-md border-2 border-[#E4E7EC] bg-[#F8FAFC] py-1 pl-8 pr-2 text-sm font-normal"
+      />
+    </div>
+
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xs font-semibold text-[#0F172A]/62">งาน {{ jobs().length }}</h2>
+      @if (previewPlan()) {
+      <button
+        type="button"
+        (click)="toggleCreateRoute()"
+        [disabled]="RouteService.isCreatingRoute() || choosingOrders()"
+        class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+      >
+        เพิ่ม/แก้ไขออเดอร์
+      </button>
+      }
+    </div>
+
+    <div class="min-h-0 flex-1 space-y-3 overflow-y-auto pb-4 pr-1">
+      <!-- การ์ดแผนใบงาน: สรุปจำนวนงาน และเรียงจุดส่งตามลำดับจาก API -->
+      @for (job of jobs(); track $index; let index = $index) {
+        <article
+          class="cursor-pointer overflow-hidden rounded-xl border border-[#E4E7EC] bg-white shadow-sm transition-colors hover:border-[#3EB489]/60"
+          [class.border-emerald-500]="RouteService.selectedJobIndex() === index"
+          [class.bg-emerald-50]="RouteService.selectedJobIndex() === index"
+          role="button"
+          tabindex="0"
+          [attr.aria-pressed]="RouteService.selectedJobIndex() === index"
+          (click)="selectJob(index)"
+          (keydown)="onJobCardKeydown($event, index)"
+          [attr.aria-labelledby]="'preview-job-' + index"
+        >
+          <div
+            class="flex items-center justify-between gap-2 border-b border-[#E4E7EC]/70 px-4 py-3"
+          >
+            <div class="flex min-w-0 items-center gap-2.5">
+              <span
+                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#ECFDF5] text-sm font-bold text-[#259d60]"
+                aria-hidden="true"
+              >
+                {{ index + 1 }}
+              </span>
+              <h3 [id]="'preview-job-' + index" class="text-sm font-semibold text-[#0F172A]">
+                ใบงาน {{ jobLabel(index) }}
+              </h3>
+            </div>
+            <span
+              class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500"
+            >
+              {{ jobStatus(index) }}
+            </span>
+          </div>
+
+          <div class="px-4 py-3">
+            <div
+              class="mb-4 grid grid-cols-3 divide-x divide-[#E4E7EC] rounded-lg bg-[#F8FAFC] py-2.5 text-center"
+            >
+              <div class="px-1">
+                <p class="text-sm font-semibold tabular-nums text-[#0F172A]">
+                  {{ job.stops.length }}
+                </p>
+                <p class="mt-0.5 text-[10px] text-slate-500">ออเดอร์</p>
+              </div>
+              <div class="px-1">
+                <p class="text-sm font-semibold tabular-nums text-[#0F172A]">
+                  {{ job.total_boxes }}
+                </p>
+                <p class="mt-0.5 text-[10px] text-slate-500">กล่อง</p>
+              </div>
+              <div class="px-1">
+                <p class="text-sm font-semibold tabular-nums text-[#0F172A]">
+                  {{ job.total_distance_km.toFixed(2) }}
+                </p>
+                <p class="mt-0.5 text-[10px] text-slate-500">กิโลเมตร</p>
+              </div>
+            </div>
+
+            <ol aria-label="ลำดับจุดส่ง">
+              @for (stop of job.stops; track stop.order.order_id) {
+                <li class="relative flex gap-3 pb-4 last:pb-0">
+                  @if (!$last) {
+                    <span
+                      class="absolute bottom-0 left-3.5 top-7 w-px bg-[#E4E7EC]"
+                      aria-hidden="true"
+                    ></span>
+                  }
+                  <span
+                    class="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#3EB489]/25 bg-[#ECFDF5] text-xs font-semibold text-[#259d60]"
+                  >
+                    {{ stop.stop_sequence }}
+                  </span>
+                  <div class="min-w-0 flex-1 pt-0.5">
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="min-w-0 wrap-break-word text-xs font-semibold text-[#0F172A]">
+                        {{ stop.order.name }}
+                      </p>
+                      <span class="shrink-0 text-[10px] text-slate-400"
+                        >#{{ stop.order.order_id }}</span
+                      >
+                    </div>
+                    <p class="mt-1 wrap-break-word text-[11px] leading-relaxed text-slate-500">
+                      {{ stop.order.address }}
+                    </p>
+                    <p class="mt-1 text-[10px] font-medium text-[#259d60]">
+                      {{ stop.order.quantity }} กล่อง
+                    </p>
+                  </div>
+                </li>
+              }
+            </ol>
+          </div>
+
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 border-t border-[#E4E7EC]/70 bg-[#F8FAFC]/70 px-4 py-2.5 text-[11px] text-slate-500"
+          >
+            <span class="inline-flex items-center gap-1.5">
+              <svg
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              ประมาณ {{ job.total_duration_minutes.toFixed(0) }} นาที
+            </span>
+            <span
+              >ค่าส่ง
+              <span class="font-semibold tabular-nums text-[#0F172A]">{{
+                job.delivery_cost.toFixed(2)
+              }}</span>
+              บาท</span
+            >
+          </div>
+        </article>
+      } @empty {
+        <div
+          class="rounded-xl border border-dashed border-[#E4E7EC] bg-[#F8FAFC] px-4 py-8 text-center"
+        >
+          <p class="text-sm font-medium text-slate-500">ยังไม่มีแผนใบงาน</p>
+          <p class="mt-1 text-xs leading-relaxed text-slate-400">กดสร้างใบงานเพื่อคำนวณแผนจัดส่ง</p>
+        </div>
+      }
+    </div>
+
+    @if (RouteService.planMessage(); as message) {
+      <p
+        role="status"
+        aria-live="polite"
+        class="mb-2 rounded-lg bg-orange-50 px-3 py-2 text-xs leading-relaxed text-orange-700"
+      >
+        {{ message }}
+      </p>
+    }
+
+    @if (!RouteService.createRoute()) {
+      <!-- Bottom Action Buttons -->
+      <div class="flex items-center gap-3 border-t border-[#E4E7EC] bg-white p-2">
+        <!-- <button
+          type="button"
+          class="w-1/3 flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E4E7EC] bg-white px-4 py-3 text-sm font-semibold text-[#0F172A] transition-colors hover:bg-[#F8FAFC] active:bg-[#F1F5F9]"
+        >
+          <svg
+            class="h-4 w-4 text-[#0F172A]/62"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+        </button> -->
+
+        <button
+          type="button"
+          (click)="toggleCreateRoute()"
+          [disabled]="RouteService.isCreatingRoute()"
+          [attr.aria-busy]="RouteService.isCreatingRoute()"
+          class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#2eb872] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#259d60] disabled:cursor-wait disabled:opacity-60"
+        >
+          <span>{{ RouteService.isCreatingRoute() ? 'กำลังสร้างใบงาน...' : 'สร้างใบงาน' }}</span>
+        </button>
+      </div>
+    } @else if (RouteService.createRoute() && !RouteService.confirmRoute()) {
+      <div class="flex items-center gap-3 border-t border-[#E4E7EC] bg-white p-2">
+        <button
+          type="button"
+          (click)="requestAlternativePlan()"
+          [disabled]="RouteService.isCreatingRoute() || !previewPlan()"
+          [attr.aria-busy]="RouteService.isCreatingRoute()"
+          aria-label="เสนอแผนอื่น"
+          title="เสนอแผนอื่น"
+          class="w-1/3 flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E4E7EC] bg-white px-4 py-3 text-sm font-semibold text-[#0F172A] transition-colors hover:bg-[#F8FAFC] active:bg-[#F1F5F9] disabled:cursor-wait disabled:opacity-60"
+        >
+          <svg
+            class="h-4 w-4 text-[#0F172A]/62"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmPlan()"
+          [disabled]="
+            RouteService.isCreatingRoute() || RouteService.confirmationUncertain() || !previewPlan()
+          "
+          [attr.aria-busy]="RouteService.isCreatingRoute()"
+          class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#2eb872] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#259d60] disabled:cursor-wait disabled:opacity-60"
+        >
+          <span>{{ RouteService.confirming() ? 'กำลังบันทึก...' : 'ยืนยันสร้างใบงาน' }}</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+<dialog
+  #orderDialog
+  (cancel)="cancelOrderForm($event)"
+  (close)="choosingOrders.set(false)"
+  aria-labelledby="order-selection-title"
+  class="order-dialog"
+>
+  <form (submit)="calculateSelectedOrders($event)" class="order-form">
+    <header class="order-form-header">
+      <h2 id="order-selection-title">เลือกออเดอร์จัดเส้นทาง</h2>
+      <p>วันที่ส่ง {{ date }} <span aria-hidden="true">·</span> เลือกได้สูงสุด 30 ออเดอร์</p>
+    </header>
+    <div class="order-selection-toolbar">
+      <div aria-live="polite" class="order-selection-count">
+        <strong>{{ selectedOrderIds().size }}<span>/30</span></strong>
+        <span
+          >ออเดอร์ที่เลือก <small>จากทั้งหมด {{ availableOrders().length }} รายการ</small></span
+        >
+      </div>
+      <div class="order-selection-actions">
+        <button
+          type="button"
+          (click)="selectAllOrders()"
+          [disabled]="RouteService.isCreatingRoute() || !availableOrders().length"
+          class="select-all-button"
+        >
+          {{ availableOrders().length > 30 ? 'เลือก 30 รายการแรก' : 'เลือกทั้งหมด' }}
+        </button>
+        <button
+          type="button"
+          (click)="clearOrderSelection()"
+          [disabled]="RouteService.isCreatingRoute() || !selectedOrderIds().size"
+          class="clear-selection-button"
+        >
+          ล้างที่เลือก
+        </button>
+      </div>
+    </div>
+    @if (selectedOrderIds().size >= 30) {
+      <p role="status" class="selection-hint">
+        เลือกครบ 30 รายการแล้ว เอารายการเดิมออกเพื่อเลือกออเดอร์อื่น
+      </p>
+    }
+    <div class="order-selection-list">
+      @for (order of availableOrders(); track order.order_id) {
+        <label
+          class="order-selection-row"
+          [class.is-selected]="selectedOrderIds().has(order.order_id)"
+          [class.is-unavailable]="
+            !selectedOrderIds().has(order.order_id) && selectedOrderIds().size >= 30
+          "
+        >
+          <input
+            #orderChoice
+            type="checkbox"
+            [checked]="selectedOrderIds().has(order.order_id)"
+            [disabled]="
+              RouteService.isCreatingRoute() ||
+              (!selectedOrderIds().has(order.order_id) && selectedOrderIds().size >= 30)
+            "
+            (change)="toggleOrder(order.order_id, orderChoice.checked)"
+          />
+          <span class="order-selection-info">
+            <span class="order-selection-name"
+              ><span class="order-number">#{{ order.order_id }}</span
+              >{{ order.name }}</span
+            >
+            <span class="order-selection-address">{{ order.address }}</span>
+          </span>
+          <span class="order-quantity">{{ order.quantity }} กล่อง</span>
+        </label>
+      }
+    </div>
+    @if (RouteService.planMessage(); as message) {
+      <p role="alert" class="selection-hint">{{ message }}</p>
+    }
+    <footer class="order-form-footer">
+      <span class="order-footer-note">{{
+        previewPlan()
+          ? 'นำออกได้โดยออเดอร์ยังพร้อมจัดงานภายหลัง'
+          : 'เลือกอย่างน้อย 1 ออเดอร์เพื่อคำนวณ'
+      }}</span>
+      <div class="order-footer-buttons">
+        <button
+          type="button"
+          (click)="cancelOrderForm()"
+          [disabled]="RouteService.isCreatingRoute()"
+          class="order-cancel-button"
+        >
+          ยกเลิก
+        </button>
+        <button
+          type="submit"
+          [disabled]="
+            (selectedOrderIds().size === 0 && !previewPlan()) || RouteService.isCreatingRoute()
+          "
+          class="order-calculate-button"
+        >
+          {{
+            RouteService.loadingPreview()
+              ? 'กำลังคำนวณ...'
+              : selectedOrderIds().size === 0 && previewPlan()
+                ? 'นำออกทั้งหมด'
+                : previewPlan()
+                  ? 'คำนวณแผนใหม่'
+                  : 'คำนวณเส้นทาง'
+          }}
+        </button>
+      </div>
+    </footer>
+  </form>
+</dialog>

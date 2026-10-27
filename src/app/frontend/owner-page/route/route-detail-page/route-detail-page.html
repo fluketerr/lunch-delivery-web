@@ -1,0 +1,180 @@
+<div class="flex h-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto pl-4">
+  <div
+    #mapContainer
+    class="fixed h-full w-full inset-0 z-0"
+    role="region"
+    aria-label="แผนที่เส้นทางจัดส่ง พร้อมตำแหน่งร้านอาหารและจุดส่ง"
+  ></div>
+  <section
+    class="fixed right-4 top-10 z-10 w-fit rounded-xl border border-[#E4E7EC] bg-white/80 shadow-lg backdrop-blur-2xl"
+    aria-labelledby="route-map-title"
+  >
+    <header class="flex items-center gap-2 p-2">
+      <div class="flex items-center gap-2">
+        <p role="status" aria-live="polite" class="whitespace-nowrap text-[10px] text-[#64748B]">
+          {{ pinCount() }} จุดส่ง
+        </p>
+        <button
+          type="button"
+          (click)="showAllRoutes()"
+          [disabled]="pinCount() === 0 && !ownerCod()"
+          class="cursor-pointer whitespace-nowrap rounded-lg border border-[#D1D5DB] px-2 py-1 text-xs text-[#0F172A] hover:bg-[#ECFDF5] focus-visible:outline-2 focus-visible:outline-emerald-600 disabled:cursor-default disabled:opacity-50"
+        >
+          แสดงเส้นทางทั้งหมด
+        </button>
+      </div>
+    </header>
+  </section>
+
+  @if (RouteService.displayPlan(); as preview) {
+    @let planSummary = summary() ?? preview.summary;
+    @let selectedJobIndex = RouteService.selectedJobIndex();
+    <section
+      class="z-1000 mt-auto w-full shrink-0 rounded-xl border border-[#E4E7EC] bg-white p-4"
+      aria-labelledby="preview-summary-title"
+    >
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <span class="h-2.5 w-2.5 rounded-full bg-[#FF7A1A]" aria-hidden="true"></span>
+          <h2 id="preview-summary-title" class="text-lg font-bold text-slate-900">
+            @if (selectedJobIndex !== null) {
+              สรุปแผนจัดส่ง · ใบงาน {{ selectedJobIndex + 1 }}
+            } @else {
+              สรุปแผนจัดส่ง · ทั้งหมด
+            }
+          </h2>
+          <span class="rounded-full bg-orange-50 px-2 py-1 text-[10px] text-orange-600">{{
+            RouteService.viewingSaved() ? 'บันทึกแล้ว' : 'ยังไม่ยืนยัน'
+          }}</span>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+          <span
+            >วันที่ส่ง
+            <strong class="font-semibold text-slate-800">{{
+              preview.settings.delivery_date
+            }}</strong></span
+          >
+          <span
+            >ออกส่ง
+            <strong class="font-semibold text-slate-800"
+              >{{ preview.settings.departure_time }} น.</strong
+            ></span
+          >
+          <span
+            >ส่งครบภายใน
+            <strong class="font-semibold text-slate-800"
+              >{{ preview.settings.deadline_time }} น.</strong
+            ></span
+          >
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <div class="rounded-2xl bg-[#ecfbf3] p-3">
+          <h3 class="mb-3 text-xs font-semibold text-slate-700">ภาพรวมการจัดส่ง</h3>
+          <dl class="space-y-2 text-xs">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">
+                {{ selectedJobIndex !== null ? 'ออเดอร์ในใบงาน' : 'ออเดอร์ทั้งหมด' }}
+              </dt>
+              <dd class="font-semibold tabular-nums text-slate-900">
+                {{ planSummary.total_orders }} ออเดอร์
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">จำนวนกล่อง</dt>
+              <dd class="font-semibold tabular-nums text-slate-900">
+                {{ planSummary.total_boxes }} กล่อง
+              </dd>
+            </div>
+            @if (selectedJobIndex === null) {
+              <div class="flex items-center justify-between gap-3">
+                <dt class="text-slate-500">จำนวนใบงาน</dt>
+                <dd class="font-semibold tabular-nums text-slate-900">
+                  {{ preview.jobs.length }} ใบงาน
+                </dd>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <dt class="text-slate-500">ไรเดอร์ที่ต้องใช้</dt>
+                <dd class="font-semibold tabular-nums text-slate-900">
+                  {{ planSummary.riders }} คน
+                </dd>
+              </div>
+            }
+            <div class="flex items-center justify-between gap-3 border-t border-emerald-100 pt-2">
+              <dt class="text-slate-500">
+                {{ selectedJobIndex !== null ? 'ระยะทางใบงาน' : 'ระยะทางรวมทุกใบงาน' }}
+              </dt>
+              <dd class="font-semibold tabular-nums text-slate-900">
+                {{ planSummary.total_distance_km.toFixed(2) }} กม.
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="rounded-2xl bg-[#f8fafc] p-3">
+          <h3 class="mb-3 text-xs font-semibold text-slate-700">รายได้และต้นทุนรวม</h3>
+          <dl class="space-y-2 rounded-xl border border-slate-200/80 bg-white p-3 text-xs">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">ยอดขายอาหาร</dt>
+              <dd class="font-semibold tabular-nums text-slate-900">
+                {{ planSummary.revenue.toFixed(2) }} ฿
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">ต้นทุนอาหาร</dt>
+              <dd class="font-semibold tabular-nums text-slate-900">
+                {{ planSummary.food_cost.toFixed(2) }} ฿
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+              <dt class="text-slate-500">ค่าจัดส่งรวม</dt>
+              <dd class="font-semibold tabular-nums text-slate-900">
+                {{ planSummary.delivery_cost.toFixed(2) }} ฿
+              </dd>
+            </div>
+          </dl>
+          <p class="mt-2 text-[10px] leading-relaxed text-slate-400">
+            กำไรสุทธิ = ยอดขายอาหาร − ต้นทุนอาหาร − ค่าจัดส่ง
+          </p>
+        </div>
+
+        <div
+          class="flex min-h-32 flex-col items-center justify-between gap-3 rounded-2xl p-3 text-center"
+          [class.bg-emerald-50]="planSummary.profit > 0"
+          [class.text-emerald-600]="planSummary.profit > 0"
+          [class.bg-red-50]="planSummary.profit < 0"
+          [class.text-red-600]="planSummary.profit < 0"
+          [class.bg-gray-50]="planSummary.profit === 0"
+          [class.text-gray-600]="planSummary.profit === 0"
+        >
+          <h3 class="text-xs font-medium">
+            {{
+              selectedJobIndex !== null ? 'กำไร / ขาดทุนสุทธิใบงาน' : 'กำไร / ขาดทุนสุทธิทั้งแผน'
+            }}
+          </h3>
+          <div>
+            <p class="text-2xl font-bold tracking-tight tabular-nums">
+              {{ planSummary.profit > 0 ? '+' : '' }}{{ planSummary.profit.toFixed(2) }} ฿
+            </p>
+            @if (planSummary.total_boxes > 0) {
+              <p class="text-[10px]">
+                เฉลี่ย {{ (planSummary.profit / planSummary.total_boxes).toFixed(2) }} บาท / กล่อง
+              </p>
+            }
+          </div>
+          <p class="text-[10px] font-medium">
+            {{ planSummary.profit > 0 ? 'กำไร' : planSummary.profit < 0 ? 'ขาดทุน' : 'เท่าทุน' }}
+          </p>
+        </div>
+      </div>
+    </section>
+  } @else {
+    <div
+      class="z-1000 mt-auto rounded-xl border border-dashed border-[#E4E7EC] bg-white/80 p-8 text-center backdrop-blur-2xl"
+    >
+      <p class="font-medium text-slate-600">ยังไม่มีข้อมูลสรุปแผนจัดส่ง</p>
+      <p class="mt-2 text-sm text-slate-400">กดสร้างใบงานเพื่อคำนวณและแสดงข้อมูลสรุป</p>
+    </div>
+  }
+</div>

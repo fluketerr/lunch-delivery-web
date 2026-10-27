@@ -1,0 +1,93 @@
+<div class="z-10 flex h-full w-full rounded-r-2xl border border-[#E4E7EC] bg-white p-4">
+  <div class="mt-4 flex min-h-0 w-full flex-col">
+    <h1 class="mb-5 text-xl font-semibold text-[#0F172A]">ข้อมูลลูกค้า</h1>
+    <div class="relative mb-5">
+      <svg class="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0F172A]/62" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke-width="2" />
+        <path stroke-width="2" stroke-linecap="round" d="m16 16 4 4" />
+      </svg>
+      <input type="search" placeholder="ค้นหาลูกค้า" aria-label="ค้นหาลูกค้า" [value]="store.search" (input)="store.searchCustomers($any($event.target).value)" class="w-full rounded-md border-2 border-[#E4E7EC] bg-[#F8FAFC] py-1 pl-8 pr-2 text-sm font-normal" />
+    </div>
+      <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xs font-semibold text-[#0F172A]/62">รายชื่อลูกค้า ({{ store.filteredCustomers.length }})</h2>
+          <button type="button" (click)="openAdd()" aria-label="&#3648;&#3614;&#3636;&#3656;&#3617;&#3621;&#3641;&#3585;&#3588;&#3657;&#3634;" [disabled]="saving"
+                class="leading-none font-light text-[#7b8794] hover:text-[#5dc19c]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 12H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M12 16V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+      </div>
+    @if (notice) { <p role="status" class="mb-3 text-sm text-emerald-700">{{ notice }}</p> }
+    <div class="min-h-0 flex-1 space-y-2 overflow-y-auto pb-4" [attr.aria-busy]="store.loading">
+      @if (store.loading) {
+        <p class="text-sm text-[#64748B]" role="status">กำลังโหลดข้อมูลลูกค้า…</p>
+      } @else if (store.error) {
+        <p class="text-sm text-orange-800">{{ store.error }}</p>
+        <button type="button" (click)="store.load()" class="cursor-pointer text-sm font-medium text-emerald-700 underline underline-offset-4">ลองอีกครั้ง</button>
+      } @else {
+        @for (customer of store.filteredCustomers; track customer.id) {
+          <article class="customer-card relative rounded-lg border border-[#E4E7EC] transition-colors hover:bg-[#F8FAFC]" [class.customer-selected]="store.selectedCustomer?.id === customer.id">
+            <button type="button" (click)="store.selectCustomer(customer)" [disabled]="!customer.coordinates" [attr.aria-pressed]="store.selectedCustomer?.id === customer.id" [attr.aria-label]="'ดูตำแหน่ง ' + customer.name" class="block w-full cursor-pointer p-3 pr-12 text-left focus-visible:outline-2 focus-visible:outline-[#3EB489] disabled:cursor-default">
+              <span class="block text-sm font-medium text-[#0F172A]">{{ customer.name }}</span>
+              @if (customer.phone) { <span class="mt-1 block text-xs text-[#64748B]">{{ customer.phone }}</span> }
+              @if (customer.address) { <span class="mt-1 block text-xs leading-5 text-[#64748B]">{{ customer.address }}</span> }
+              @if (!customer.coordinates) { <span class="mt-1 block text-xs text-orange-700">ยังไม่มีพิกัด</span> }
+            </button>
+            <button type="button" (click)="openEdit(customer, $event)" [attr.aria-label]="'แก้ไขข้อมูล ' + customer.name" title="แก้ไขข้อมูล" class="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[#64748B] hover:bg-emerald-50 hover:text-emerald-700 focus-visible:outline-2 focus-visible:outline-emerald-600">
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 4.487 2.651 2.651M5 19l4.2-.84L19.5 7.86a1.875 1.875 0 0 0-2.65-2.65L6.55 15.51 5 19Z" /></svg>
+            </button>
+          </article>
+        } @empty {
+          <p class="text-sm text-[#64748B]" role="status">{{ store.search.trim() ? 'ไม่พบลูกค้าที่ค้นหา' : 'ยังไม่มีข้อมูลลูกค้า' }}</p>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+@if (editingCustomer || addingCustomer) {
+  <div class="fixed inset-0 z-1000 flex items-center justify-center bg-slate-950/45 p-4" (click)="closeEdit()" (keydown.escape)="closeEdit()">
+    <section role="dialog" aria-modal="true" aria-labelledby="edit-customer-title" class="max-h-[90dvh] overflow-y-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl" (click)="$event.stopPropagation()">
+      <header class="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <h2 id="edit-customer-title" class="text-lg font-semibold text-[#0F172A]">{{ addingCustomer ? 'เพิ่มลูกค้า' : 'แก้ไขข้อมูลลูกค้า' }}</h2>
+          <p class="mt-1 text-sm text-[#64748B]">ปรับปรุงข้อมูลและกดบันทึก</p>
+        </div>
+        <button type="button" aria-label="ปิด" (click)="closeEdit()" class="rounded-md p-1 text-xl leading-none text-slate-500 hover:bg-slate-100">&times;</button>
+      </header>
+      <form (ngSubmit)="saveCustomer()" class="space-y-4">
+        <fieldset [disabled]="saving" class="space-y-4">
+        <label class="block text-sm font-medium text-slate-700">ชื่อ
+          <input name="name" [(ngModel)]="editForm.name" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">เบอร์โทรศัพท์
+          <input name="phone" type="tel" [(ngModel)]="editForm.phone" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">ที่อยู่
+          <textarea name="address" [(ngModel)]="editForm.address" required rows="3" class="mt-1 w-full resize-y rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"></textarea>
+        </label>
+        <p class="text-sm text-slate-500">&#3588;&#3621;&#3636;&#3585;&#3610;&#3609;&#3649;&#3612;&#3609;&#3607;&#3637;&#3656;&#3648;&#3614;&#3639;&#3656;&#3629;&#3648;&#3621;&#3639;&#3629;&#3585;&#3605;&#3635;&#3649;&#3627;&#3609;&#3656;&#3591;&#3621;&#3641;&#3585;&#3588;&#3657;&#3634;</p>
+        <div #locationPicker role="region" aria-label="Customer location map" class="h-60 w-full rounded-lg border border-slate-300"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-sm font-medium text-slate-700">ละติจูด
+            <input name="latitude" type="number" step="any" min="-90" max="90" [(ngModel)]="editForm.latitude" (ngModelChange)="updatePickerPin()" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+          </label>
+          <label class="block text-sm font-medium text-slate-700">ลองจิจูด
+            <input name="longitude" type="number" step="any" min="-180" max="180" [(ngModel)]="editForm.longitude" (ngModelChange)="updatePickerPin()" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+          </label>
+        </div>
+        @if (editError) { <p role="alert" class="text-sm text-red-700">{{ editError }}</p> }
+        <footer class="flex justify-end gap-2 pt-2">
+          <button type="button" (click)="closeEdit()" [disabled]="saving" class="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">ยกเลิก</button>
+          <button type="submit" [disabled]="saving" class="cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60">{{ saving ? 'กำลังบันทึก…' : 'บันทึก' }}</button>
+        </footer>
+        </fieldset>
+      </form>
+    </section>
+  </div>
+}

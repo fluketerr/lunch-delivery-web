@@ -1,0 +1,47 @@
+
+/* ฟอร์มเลือกออเดอร์: เลื่อนเฉพาะรายการ โดยคงหัวฟอร์มและปุ่มด้านล่างไว้ */
+.order-dialog { margin: auto; width: min(92vw, 760px); max-height: 90dvh; padding: 0; border: 1px solid #e4e7ec; border-radius: 20px; color: #0f172a; background: white; box-shadow: 0 24px 80px #0f172a30; overflow: hidden; }
+.order-dialog::backdrop { background: #0f172a66; }
+.order-form { display: flex; flex-direction: column; max-height: 90dvh; padding: 24px; gap: 16px; }
+.order-form-header h2 { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.4; }
+.order-form-header p { margin: 6px 0 0; font-size: 13px; color: #64748b; }
+.order-form-header p span { padding: 0 6px; }
+.order-selection-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 8px 0; background: white; }
+.order-selection-count { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #475569; }
+.order-selection-count strong { color: #25865f; font-size: 24px; line-height: 1; white-space: nowrap; }
+.order-selection-count strong span { font-size: 14px; font-weight: 500; color: #64748b; }
+.order-selection-count small { display: block; margin-top: 2px; font-size: 11px; color: #64748b; }
+.order-selection-actions, .order-footer-buttons { display: flex; align-items: center; gap: 8px; }
+.order-form button { cursor: pointer; border-radius: 8px; font-size: 12px; font-weight: 500; padding: 8px 12px; transition: background .15s; }
+.order-form button:disabled { opacity: .45; cursor: default; }
+.order-form button:focus-visible, .order-selection-row input:focus-visible { outline: 2px solid #64748b; outline-offset: 3px; }
+.select-all-button { color: #334155; background: #f8fafc; border: 1px solid #e4e7ec; }
+.clear-selection-button { color: #64748b; background: white; border: 1px solid #e4e7ec; }
+.selection-hint { flex-shrink: 0; margin: 0; padding: 10px 12px; border-radius: 8px; background: #fff7ed; color: #b45309; font-size: 12px; line-height: 1.6; }
+.order-selection-list { min-height: 0; max-height: 48dvh; overflow-y: auto; border-top: 1px solid #e4e7ec; border-bottom: 1px solid #e4e7ec; scrollbar-gutter: stable; }
+.order-selection-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #edf1f5; cursor: pointer; }
+.order-selection-row:last-child { border-bottom: 0; }
+.order-selection-row:hover { background: #f8fafc; }
+.order-selection-row.is-selected { background: white; }
+.order-selection-row.is-selected:hover { background: #f8fafc; }
+.order-selection-row.is-unavailable { opacity: .5; cursor: default; }
+.order-selection-row input { width: 17px; height: 17px; flex-shrink: 0; accent-color: #2eb872; cursor: inherit; }
+.order-selection-info { flex: 1; min-width: 0; }
+.order-selection-name { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 8px; font-size: 13px; font-weight: 600; }
+.order-number { font-size: 11px; color: #64748b; font-weight: 500; }
+.order-selection-address { display: block; margin-top: 4px; color: #64748b; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.order-quantity { flex-shrink: 0; padding: 4px 0; color: #64748b; font-size: 11px; white-space: nowrap; }
+.order-form-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; flex-shrink: 0; gap: 12px; border-top: 1px solid #e4e7ec; padding-top: 16px; }
+.order-footer-note { font-size: 11px; color: #64748b; }
+.order-form .order-cancel-button { padding: 10px 16px; border: 1px solid #e4e7ec; background: white; }
+.order-form .order-calculate-button { padding: 10px 20px; background: #2eb872; color: white; font-weight: 600; }
+.order-calculate-button:hover:not(:disabled) { background: #259d60; }
+@media (max-width: 520px) {
+  .order-form { padding: 16px; gap: 12px; }
+  .order-form-header h2 { font-size: 18px; }
+  .order-selection-toolbar { padding: 4px 0; }
+  .order-selection-actions { width: 100%; }
+  .order-selection-row { gap: 8px; padding: 12px 10px; }
+  .order-footer-note { display: none; }
+  .order-footer-buttons { width: 100%; justify-content: flex-end; }
+}

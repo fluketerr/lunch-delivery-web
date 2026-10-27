@@ -1,0 +1,155 @@
+<main>
+  <h1>ทดสอบจัดงานส่งอาหาร</h1>
+  <p>เลือกออเดอร์ → คำนวณแผน → ตรวจเส้นทางและต้นทุน → ยืนยันใบงาน → ไรเดอร์เริ่มและส่งงาน</p>
+
+  <section>
+    <h2>เชื่อมต่อ Backend</h2>
+    <div class="row">
+      <label class="grow">URL Backend
+        <input [(ngModel)]="apiBase" (ngModelChange)="connectionChanged()" [disabled]="busy()" placeholder="http://localhost:3000" />
+      </label>
+      <button (click)="connect()" [disabled]="busy()">เชื่อมต่อ / โหลดข้อมูล</button>
+    </div>
+    <p class="hint">ใช้ URL ของ Backend โดยไม่เติม /api ค่าเริ่มต้นคือ Backend บนเครื่องพอร์ต 3000</p>
+  </section>
+
+  @if (busy()) { <p role="status">กำลังดำเนินการ กรุณารอสักครู่…</p> }
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (message()) { <p class="success" role="status">{{ message() }}</p> }
+
+  <section>
+    <h2>1. วันที่และเงื่อนไขจัดส่ง</h2>
+    <fieldset [disabled]="busy()">
+      <div class="grid">
+        <label>วันที่ส่ง <input type="date" [(ngModel)]="settings.delivery_date" (ngModelChange)="reload()" /></label>
+        <label>เลือกวันที่มีออเดอร์
+          <select [(ngModel)]="settings.delivery_date" (ngModelChange)="reload()">
+            <option [value]="settings.delivery_date">{{ settings.delivery_date }}</option>
+            @for (date of dates(); track date.delivery_date) {
+              <option [value]="date.delivery_date">{{ date.delivery_date }} (พร้อมจัด {{ date.eligible_orders }} / {{ date.total_orders }})</option>
+            }
+          </select>
+        </label>
+        <label>ออกส่ง <input type="time" [(ngModel)]="settings.departure_time" (ngModelChange)="invalidatePlans()" /></label>
+        <label>ส่งครบภายใน <input type="time" [(ngModel)]="settings.deadline_time" (ngModelChange)="invalidatePlans()" /></label>
+        <label>ละติจูดร้าน <input type="number" step="0.0000001" min="-90" max="90" [(ngModel)]="settings.origin.latitude" (ngModelChange)="invalidatePlans()" placeholder="กรอกหรือคลิกแผนที่" /></label>
+        <label>ลองจิจูดร้าน <input type="number" step="0.0000001" min="-180" max="180" [(ngModel)]="settings.origin.longitude" (ngModelChange)="invalidatePlans()" /></label>
+        <label>ความเร็ว (กม./ชม.) <input type="number" min="1" max="120" [(ngModel)]="settings.speed_kmh" (ngModelChange)="invalidatePlans()" /></label>
+        <label>เวลาส่งอาหารต่อออเดอร์ (นาที) <input type="number" min="0" max="60" step="0.5" [(ngModel)]="settings.service_minutes" (ngModelChange)="invalidatePlans()" /></label>
+        <label>ค่าเรียกไรเดอร์ต่อใบงาน (บาท) <input type="number" min="0" step="0.01" [(ngModel)]="settings.fixed_cost" (ngModelChange)="invalidatePlans()" /></label>
+        <label>ค่าระยะทางต่อกล่อง (บาท/กม.) <input type="number" min="0" step="0.01" [(ngModel)]="settings.cost_per_km_per_box" (ngModelChange)="invalidatePlans()" /></label>
+      </div>
+      <label class="check"><input type="checkbox" [(ngModel)]="settings.return_to_shop" (ngModelChange)="invalidatePlans()" /> รวมระยะทางและเวลากลับร้านในใบงาน</label>
+    </fieldset>
+    <p class="hint">เวลาแสดงเป็นเวลาไทย • ค่าส่ง = ค่าเรียก + (บาท/กม./กล่อง × จำนวนกล่องทั้งหมดในใบงาน × ระยะทางรวม)</p>
+    <p class="hint">กำหนดส่งตรวจถึงตอนส่งมอบอาหารเสร็จทุกจุด ส่วนเวลากลับร้านอาจเลยกำหนดส่งได้</p>
+  </section>
+
+  <section>
+    <h2>2. ออเดอร์พร้อมจัดงาน</h2>
+    <p class="hint">ก่อนจัดงานจะตรวจระยะตามถนนจากร้านถึงลูกค้าแต่ละรายไม่เกิน 3 กม. ด้วย OSRM</p>
+    <div class="row">
+      <button (click)="selectAll(true)" [disabled]="busy()">เลือกทั้งหมด (สูงสุด 30)</button>
+      <button (click)="selectAll(false)" [disabled]="busy()">ล้างการเลือก</button>
+      <button (click)="reload()" [disabled]="busy()">โหลดรายการใหม่</button>
+      <strong>เลือก {{ selected().size }} ออเดอร์ / {{ selectedBoxes() }} กล่อง</strong>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>เลือก</th><th>Order</th><th>ลูกค้า</th><th>กล่อง</th><th>ยอดขาย</th><th>พิกัด</th></tr></thead>
+        <tbody>
+          @for (order of orders(); track order.order_id) {
+            <tr>
+              <td><input #selection type="checkbox" [attr.aria-label]="'เลือกออเดอร์ ' + order.order_id" [checked]="selected().has(order.order_id)" (change)="toggle(order.order_id, selection.checked)" [disabled]="busy()" /></td>
+              <td>#{{ order.order_id }}</td><td>{{ order.name }}</td><td>{{ order.quantity }}</td>
+              <td>{{ order.quantity * order.unit_price | number:'1.2-2' }}</td><td>{{ order.latitude }}, {{ order.longitude }}</td>
+            </tr>
+          } @empty { <tr><td colspan="6">ไม่มีออเดอร์พร้อมจัดงานในวันที่เลือก หรือยังไม่ได้เชื่อมต่อ Backend</td></tr> }
+        </tbody>
+      </table>
+    </div>
+    <div class="row">
+      <button class="primary" (click)="calculate()" [disabled]="busy() || !selected().size">คำนวณแผนจัดส่ง</button>
+      <button (click)="calculate(true)" [disabled]="busy() || !activePreview()">เสนอแผนอื่น</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. แผนที่เส้นทาง</h2>
+    <p class="hint">คลิกแผนที่เพื่อตั้งพิกัดร้าน การเปลี่ยนพิกัดจะล้างแผนตัวอย่างที่คำนวณไว้</p>
+    <div #mapElement class="map" aria-label="แผนที่เส้นทางจัดส่ง"></div>
+    <p role="status">{{ mapMessage() }}</p>
+  </section>
+
+  @if (activePreview(); as preview) {
+    <section>
+      <h2>4. ตรวจและยืนยันแผน</h2>
+      <p class="hint">แสดงเฉพาะแผนปัจจุบัน ขอแผนอื่นได้เรื่อย ๆ และอาจวนกลับมาแผนที่เคยเห็น</p>
+      <p>{{ preview.method }}</p>
+      <p><strong>{{ preview.summary.riders }} ใบงาน / {{ preview.summary.total_orders }} ออเดอร์ / {{ preview.summary.total_boxes }} กล่อง</strong></p>
+      <p>ระยะทางรวม {{ preview.summary.total_distance_km | number:'1.2-2' }} กม. • ยอดขาย {{ preview.summary.revenue | number:'1.2-2' }} • ต้นทุนอาหาร {{ preview.summary.food_cost | number:'1.2-2' }} • ค่าส่ง {{ preview.summary.delivery_cost | number:'1.2-2' }} บาท</p>
+      <p [class.error]="preview.summary.profit < 0"><strong>กำไรหลังหักค่าส่ง {{ preview.summary.profit | number:'1.2-2' }} บาท</strong></p>
+      @if (preview.summary.profit < 0) { <p class="error">แผนนี้ขาดทุน ลองเสนอแผนอื่นหรือปรับเงื่อนไขก่อนยืนยัน</p> }
+      <div class="cards">
+        @for (job of preview.jobs; track $index; let index = $index) {
+          <article [style.border-left-color]="colors[index % colors.length]">
+            <h3>ใบงาน {{ index + 1 }} — {{ job.stops.length }} ออเดอร์ / {{ job.total_boxes }} กล่อง</h3>
+            <p>{{ job.total_distance_km | number:'1.2-2' }} กม. • {{ job.total_duration_minutes | number:'1.1-1' }} นาที</p>
+            <p>ค่าส่ง {{ job.delivery_cost | number:'1.2-2' }} บาท • กำไร <strong [class.error]="job.profit < 0">{{ job.profit | number:'1.2-2' }}</strong> บาท</p>
+            <ol>
+              @for (stop of job.stops; track stop.order.order_id) {
+                <li>#{{ stop.order.order_id }} {{ stop.order.name }} — {{ stop.order.quantity }} กล่อง<br />ถึง {{ time(stop.estimated_arrival_at) }} / ส่งมอบเสร็จ {{ time(stop.estimated_departure_at) }}</li>
+              }
+            </ol>
+          </article>
+        }
+      </div>
+      <button class="primary" (click)="confirm()" [disabled]="busy()">ยืนยันและสร้าง {{ preview.jobs.length }} ใบงาน</button>
+      <p class="hint">แผนตัวอย่างมีอายุ 30 นาที การยืนยันจะบันทึกฐานข้อมูลและล็อกออเดอร์ในใบงาน</p>
+    </section>
+  }
+
+  <section>
+    <h2>5. ใบงานที่บันทึกแล้ว — {{ settings.delivery_date }}</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>เลขใบงาน</th><th>สถานะ</th><th>ส่งแล้ว</th><th>ระยะทาง</th><th>ค่าส่ง</th><th>กำไร</th><th></th></tr></thead>
+        <tbody>
+          @for (job of jobs(); track job.job_id) {
+            <tr><td>{{ job.job_code }}</td><td>{{ status(job) }}</td><td>{{ job.delivered_orders }}/{{ job.total_orders }}</td>
+              <td>{{ job.total_distance_km }} กม.</td><td>{{ job.delivery_cost }}</td><td>{{ job.profit ?? '-' }}</td>
+              <td><button (click)="openJob(job.job_code)" [disabled]="busy()">เปิดใบงาน</button></td></tr>
+          } @empty { <tr><td colspan="7">ยังไม่มีใบงาน</td></tr> }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. ทดสอบฝั่งไรเดอร์</h2>
+    <div class="row"><label class="grow">เลขใบงาน <input [(ngModel)]="workCode" placeholder="เช่น 482731" [disabled]="busy()" /></label>
+      <button (click)="openJob()" [disabled]="busy()">ค้นหา / รีเฟรชใบงาน</button></div>
+    @if (riderJob(); as job) {
+      <h3>{{ job.job_code }} — {{ status(job) }}</h3>
+      <p>วันที่ {{ job.delivery_date }} • ออกตามแผน {{ time(job.departure_at) }} • กำหนดส่ง {{ time(job.deadline_at) }}</p>
+      <p>รับอาหาร {{ job.totals?.total_boxes ?? '-' }} กล่อง • เริ่มจริง {{ job.started_at ?? '-' }} • ส่งครบจริง {{ job.completed_at ?? '-' }}</p>
+      @if (!job.started_at && job.status === 'ISSUED') { <button class="primary" (click)="start()" [disabled]="busy()">เริ่มงาน</button> }
+      <ol class="rider-stops">
+        @for (stop of job.stops; track stop.stop_id) {
+          <li>
+            <strong>#{{ stop.order_id }} {{ stopOrder(stop).name }} — {{ stopOrder(stop).quantity }} กล่อง</strong>
+            <p>{{ stopOrder(stop).address }}<br />โทร <a [href]="'tel:' + stopOrder(stop).phone">{{ stopOrder(stop).phone }}</a></p>
+            <p>คาดว่าถึง {{ time(stop.estimated_arrival_at) }} • ส่งจริง {{ stop.delivered_at ?? '-' }}</p>
+            @if (stop.late) { <p class="error">ส่งเกินกำหนด</p> }
+            <div class="row">
+              <a [href]="navigation(stop)" target="_blank" rel="noopener noreferrer">เปิดแผนที่นำทาง</a>
+              @if (!stop.delivered_at) {
+                <button (click)="deliver(stop.stop_id)" [disabled]="busy() || !job.started_at || nextStopId() !== stop.stop_id">ส่งสำเร็จ</button>
+              } @else { <strong class="success">ส่งสำเร็จแล้ว</strong> }
+            </div>
+          </li>
+        }
+      </ol>
+    }
+  </section>
+</main>

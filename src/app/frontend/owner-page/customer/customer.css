@@ -1,0 +1,8 @@
+* {
+  font-family: 'Prompt', sans-serif;
+}
+
+.customer-selected {
+  border-color: #2cbd91;
+  background-color: #ecfdf5;
+}
